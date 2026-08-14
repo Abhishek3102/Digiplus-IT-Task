@@ -79,3 +79,26 @@ graph TD
 * **Google Gemini (gemini-1.5-flash)**: The primary Large Language Model that powers the IT Support Chatbot, enabling intelligent conversation, issue analysis, and automated responses.
 * **Google Generative AI Embeddings**: Converts text from the IT knowledge base into high-dimensional vectors, allowing the Qdrant database to perform accurate semantic searches for relevant solutions.
 * **LangChain & LangGraph**: Orchestrates the multi-agent workflow, managing the state between the conversational agent, the vector retriever, and the ticket-routing logic seamlessly.
+
+---
+
+## 🔄 Workflow & Logic
+
+### 👥 User Roles & Dashboards
+The platform distinguishes between two primary types of users using Clerk's Role-Based Access Control (RBAC):
+1. **Standard Users**: Have access to the main IT Support Chatbot and their personal "Your Tickets" dashboard. They can chat to resolve issues, view the status of their raised tickets, and track progress.
+2. **Department Workers**: IT staff assigned to specific departments (e.g., Network, Identity, Endpoint). They have access to a dedicated Department Dashboard where they only see tickets routed to their specific domain.
+
+### 🤖 Chatbot & Resolution Logic
+The AI chatbot follows a multi-tiered approach to resolve user queries efficiently before escalating to human workers:
+1. **Local FAQs (Tier 1)**: The agent first checks a hardcoded list of common, high-priority issues (e.g., "Forgot Password", "VPN connection issues"). If a match is found, it provides an immediate, predefined solution.
+2. **Vector DB Similarity (Tier 2)**: If the query is not in the quick FAQs, the agent converts the user's message into vector embeddings and queries the **Qdrant Vector Database**. It uses a similarity score threshold to find relevant IT knowledge base articles. If a high-confidence match is found, the solution is streamed back to the user.
+3. **Ticket Escalation (Tier 3)**: If neither the FAQs nor the Vector DB yields a confident solution, the chatbot gracefully admits it doesn't have the answer and provides a **"Raise Ticket"** suggestion button.
+4. **Intelligent Routing**: When the user clicks the "Raise Ticket" button, the AI analyzes the context of the conversation, categorizes the issue (e.g., Network, Identity, Business Apps), and automatically routes the new ticket to the correct department's queue.
+
+### 🎫 Jira Integration & Ticket Acceptance
+When an issue is escalated to a department queue, the IT workers take over:
+1. **Review**: A worker views the ticket details (which include the AI's preliminary analysis and priority score) on their department dashboard.
+2. **Acceptance**: The worker clicks the **"Accept"** button on the ticket.
+3. **Jira Synchronization**: The backend intercepts this action and automatically triggers the Jira Integration API. A corresponding issue is created in the corporate Jira workspace, enabling the IT team to track their work in their native project management tool.
+4. **Status Update**: The ticket status in MongoDB is updated from `pending_analysis` to `open`, and the user's personal dashboard reflects this progress in real-time.
