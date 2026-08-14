@@ -4,6 +4,32 @@ Welcome to the **DigiPlus AI-Powered Service Desk**, a modern, intelligent IT su
 
 ---
 
+## Credentials to check
+There are 3 types of users - normal users who face and raise issues, department workers of various categories and admin.
+Normal users login using gmail
+other two types of users are hardcoded and login using these credentials :
+
+# Admin Credentials
+admin@digiplus.it - SecureDigiplus2026!
+
+# Identity Department
+identity1@digiplus.it - SecureDigiplus2026!
+identity2@digiplus.it - SecureDigiplus2026!
+
+# Network Department
+network1@digiplus.it - SecureDigiplus2026!
+network2@digiplus.it - SecureDigiplus2026!
+
+# Endpoint Department
+endpoint1@digiplus.it - SecureDigiplus2026!
+endpoint2@digiplus.it - SecureDigiplus2026!
+
+# Business Apps Department
+business_apps1@digiplus.it - SecureDigiplus2026!
+business_apps2@digiplus.it - SecureDigiplus2026!
+
+---
+
 ## refer this video walkthrough - not the best but ok
 https://drive.google.com/file/d/1cmtaFaauGZExlv173gNicFWme4rhS79U/view?usp=sharing
 
