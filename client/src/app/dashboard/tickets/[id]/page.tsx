@@ -1,7 +1,8 @@
-import { auth } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import ReactMarkdown from "react-markdown";
+import AcceptButton from "@/components/AcceptButton";
 
 async function getTicket(id: string) {
   const { getToken } = await auth();
@@ -19,23 +20,35 @@ async function getTicket(id: string) {
       cache: "no-store", // We could use Next.js revalidation here or SSE for real-time
     });
     
+    console.log(`Fetch ticket ${id} status:`, res.status);
+    
     if (!res.ok) {
+      const text = await res.text();
+      console.log(`Fetch ticket ${id} error body:`, text);
       if (res.status === 404) return null;
-      throw new Error("Failed to fetch ticket");
+      throw new Error(`Failed to fetch ticket: ${text}`);
     }
     
     return res.json();
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error fetching ticket:", error);
-    return null;
+    return { error: error.message || String(error) };
   }
 }
 
-export default async function TicketDetailPage({ params }: { params: { id: string } }) {
+export default async function TicketDetailPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
+  const user = await currentUser();
+  const role = user?.publicMetadata?.role;
+  const isWorker = role === 'worker';
+  
   const ticket = await getTicket(params.id);
   
-  if (!ticket || ticket.error) {
-    notFound();
+  if (!ticket) {
+    return <div className="p-20 text-white">Ticket not found or error loading. ID: {params.id}</div>;
+  }
+  if (ticket.error) {
+    return <div className="p-20 text-white">Error: {ticket.error} - ID: {params.id}</div>;
   }
 
   const isPending = ticket.status === "pending_analysis";
@@ -54,18 +67,32 @@ export default async function TicketDetailPage({ params }: { params: { id: strin
           <div className="bg-white/5 border border-white/10 rounded-xl p-6">
             <div className="flex justify-between items-start mb-4">
               <h1 className="text-2xl font-bold">{ticket.title}</h1>
-              <span className={`px-3 py-1 rounded-full text-xs font-medium uppercase ${
-                    ticket.status === 'resolved' ? 'bg-emerald-500/20 text-emerald-300' :
-                    ticket.status === 'open' ? 'bg-blue-500/20 text-blue-300' :
-                    'bg-yellow-500/20 text-yellow-300'
-                  }`}>
-                {isPending ? 'Analyzing...' : ticket.status}
-              </span>
+              <div className="flex items-center gap-3">
+                {ticket.assignee_email && (
+                  <span className="text-sm text-gray-400 bg-white/5 px-3 py-1 rounded-full border border-white/10">
+                    Assignee: <span className="text-white">{ticket.assignee_email}</span>
+                  </span>
+                )}
+                <span className={`px-3 py-1 rounded-full text-xs font-medium uppercase ${
+                      ticket.status === 'resolved' ? 'bg-emerald-500/20 text-emerald-300' :
+                      ticket.status === 'open' ? 'bg-blue-500/20 text-blue-300' :
+                      ticket.status === 'in_progress' ? 'bg-purple-500/20 text-purple-300' :
+                      'bg-yellow-500/20 text-yellow-300'
+                    }`}>
+                  {isPending ? 'Analyzing...' : ticket.status}
+                </span>
+              </div>
             </div>
             
             <div className="bg-black/30 rounded-lg p-4 mb-6">
               <p className="text-gray-300 whitespace-pre-wrap">{ticket.description}</p>
             </div>
+            
+            {isWorker && (ticket.status === 'open' || ticket.status === 'pending_analysis') && (
+              <div className="mt-4 border-t border-white/10 pt-4">
+                <AcceptButton ticketId={ticket.id || ticket._id} />
+              </div>
+            )}
             
             {ticket.jira_issue_key && (
               <div className="flex items-center gap-2 text-sm text-gray-400">

@@ -64,7 +64,7 @@ async def route_to_department(msg: str, user_id: str):
         ("system", "Classify the IT issue into one of these departments: 'network', 'identity', 'endpoint', 'business-apps'. Output only the department name."),
         ("human", "{issue}")
     ])
-    classifier_chain = classifier_prompt | ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0) | StrOutputParser()
+    classifier_chain = classifier_prompt | ChatGoogleGenerativeAI(model="gemini-flash-lite-latest", temperature=0) | StrOutputParser()
     dept = await classifier_chain.ainvoke({"issue": msg})
     dept = dept.strip().lower()
     if dept not in ['network', 'identity', 'endpoint', 'business-apps']:
@@ -82,25 +82,28 @@ async def route_to_department(msg: str, user_id: str):
 
 async def chat_endpoint_logic(msg: str, user_id: str):
     redis = get_redis()
+    basic_faqs = {
+        "how can u help me": "I am an AI IT Support agent. I can help you troubleshoot issues like VPN access, password resets, Wi-Fi connectivity, and more. Just describe your problem!",
+        "what can you do": "I can assist you with IT support tasks. If I don't know the answer, I can route your issue to the correct department.",
+        "hi": "Hello! How can I help you with your IT issues today?",
+        "hello": "Hi there! What IT problem are you facing today?"
+    }
     
-    # 1. Check Redis Cache
-    cache_key = f"faq:{msg.lower().strip()}"
-    cached_answer = await redis.get(cache_key)
-    
-    if cached_answer:
-        async def stream_cache():
+    clean_msg = msg.lower().strip().replace("?", "")
+    if clean_msg in basic_faqs:
+        ans = basic_faqs[clean_msg]
+        async def stream_faq():
             await append_chat_message(user_id, "user", msg)
-            await append_chat_message(user_id, "assistant", cached_answer)
-            yield cached_answer
-        return stream_cache()
+            await append_chat_message(user_id, "assistant", ans)
+            yield ans
+        return stream_faq()
     
     # 2. RAG Retrieval
     docs = await retriever.ainvoke(msg)
     
     if not docs:
-        # 3. Fallback to Department Routing
-        dept = await route_to_department(msg, user_id)
-        fallback_msg = f"I could not find an automated solution for this. I have created a ticket and routed it to the '{dept}' department for human assistance."
+        # 3. Fallback to suggest ticket
+        fallback_msg = f"I don't have the exact idea, would you like to raise an issue to a specific department and get it solved?[ACTION:RAISE_TICKET]"
         async def stream_fallback():
             await append_chat_message(user_id, "user", msg)
             await append_chat_message(user_id, "assistant", fallback_msg)
@@ -116,10 +119,15 @@ async def chat_endpoint_logic(msg: str, user_id: str):
     )
 
     async def stream_generator():
-        full_response = ""
-        async for chunk in chain.astream(msg):
-            full_response += chunk
-            yield chunk
+        full_response = await chain.ainvoke(msg)
+        
+        if "i do not know" in full_response.lower():
+            full_response = "I don't have the exact idea, would you like to raise an issue to a specific department and get it solved?[ACTION:RAISE_TICKET]"
+            
+        # Stream the final response to UI
+        chunk_size = 20
+        for i in range(0, len(full_response), chunk_size):
+            yield full_response[i:i+chunk_size]
             await asyncio.sleep(0.01)
             
         await append_chat_message(user_id, "user", msg)

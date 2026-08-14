@@ -7,6 +7,7 @@ import { MessageSquare, X, Send, Loader2 } from "lucide-react";
 interface Message {
   role: "user" | "assistant";
   content: string;
+  showTicketButton?: boolean;
 }
 
 export default function ChatWidget() {
@@ -27,6 +28,34 @@ export default function ChatWidget() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  const handleCreateTicket = async (description: string) => {
+    try {
+      setIsLoading(true);
+      const token = await getToken();
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      
+      const res = await fetch(`${backendUrl}/tickets/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ title: "Issue from Chat", description })
+      });
+      
+      const data = await res.json();
+      if (res.ok) {
+        setMessages(prev => [...prev, { role: "assistant", content: `Your issue has been submitted to the ${data.department || 'appropriate'} department. They will look into it shortly!` }]);
+      } else {
+        setMessages(prev => [...prev, { role: "assistant", content: "Failed to submit the ticket." }]);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,7 +82,6 @@ export default function ChatWidget() {
       if (!res.ok) throw new Error("Failed to send message");
       if (!res.body) throw new Error("No response body");
 
-      // Handle streaming response
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let assistantMsg = "";
@@ -67,10 +95,18 @@ export default function ChatWidget() {
         const chunk = decoder.decode(value);
         assistantMsg += chunk;
         
-        setMessages(prev => [
-          ...prev.slice(0, -1),
-          { role: "assistant", content: assistantMsg }
-        ]);
+        if (assistantMsg.includes("[ACTION:RAISE_TICKET]")) {
+           const cleanMsg = assistantMsg.replace("[ACTION:RAISE_TICKET]", "");
+           setMessages(prev => [
+             ...prev.slice(0, -1),
+             { role: "assistant", content: cleanMsg, showTicketButton: true }
+           ]);
+        } else {
+           setMessages(prev => [
+             ...prev.slice(0, -1),
+             { role: "assistant", content: assistantMsg }
+           ]);
+        }
       }
     } catch (error) {
       console.error("Chat error:", error);
@@ -117,22 +153,39 @@ export default function ChatWidget() {
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {messages.map((msg, i) => (
-            <div 
-              key={i} 
-              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
-              <div 
-                className={`max-w-[80%] rounded-2xl px-4 py-2 ${
-                  msg.role === 'user' 
-                    ? 'bg-blue-600 text-white rounded-tr-sm' 
-                    : 'bg-white/10 text-gray-200 rounded-tl-sm'
-                }`}
-              >
-                {msg.content}
+          {messages.map((msg, i) => {
+            const hasTicketAction = msg.content.includes("[ACTION:RAISE_TICKET]") || msg.showTicketButton;
+            const displayContent = msg.content.replace("[ACTION:RAISE_TICKET]", "").trim();
+            
+            return (
+              <div key={i} className="flex flex-col gap-2">
+                <div 
+                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div 
+                    className={`max-w-[80%] rounded-2xl px-4 py-2 ${
+                      msg.role === 'user' 
+                        ? 'bg-blue-600 text-white rounded-tr-sm' 
+                        : 'bg-white/10 text-gray-200 rounded-tl-sm'
+                    }`}
+                  >
+                    {displayContent}
+                  </div>
+                </div>
+                {hasTicketAction && msg.role === 'assistant' && (
+                  <div className="flex justify-start">
+                    <button
+                      onClick={() => handleCreateTicket(messages.slice(0, i+1).map(m => m.content.replace("[ACTION:RAISE_TICKET]", "")).join("\n"))}
+                      className="bg-blue-600 hover:bg-blue-500 text-white text-xs px-4 py-2 rounded-full shadow-lg transition-all"
+                    >
+                      Raise an issue to department
+                    </button>
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
+
           {isLoading && (
             <div className="flex justify-start">
               <div className="bg-white/10 rounded-2xl rounded-tl-sm px-4 py-2 flex items-center gap-2">

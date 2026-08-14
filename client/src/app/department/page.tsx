@@ -62,33 +62,41 @@ export default async function DepartmentPage() {
           </div>
         ) : (
           <div className="grid gap-4">
-            {tickets.map((ticket: any) => (
-              <Link 
-                href={`/dashboard/tickets/${ticket._id}`} 
-                key={ticket._id}
-                className="block bg-white/5 border border-white/10 rounded-xl p-5 hover:bg-white/10 transition-all group"
-              >
+            {tickets.map((ticket: any) => {
+              const ticketId = ticket.id || ticket._id;
+              return (
+                <Link 
+                  href={`/dashboard/tickets/${ticketId}`} 
+                  key={ticketId}
+                  className="block bg-white/5 border border-white/10 rounded-xl p-5 hover:bg-white/10 transition-all group relative"
+                >
+                  <div className="absolute top-4 right-4 flex gap-2">
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                    ticket.status === 'resolved' ? 'bg-emerald-500/20 text-emerald-300' :
+                    ticket.status === 'open' ? 'bg-blue-500/20 text-blue-300' :
+                    'bg-yellow-500/20 text-yellow-300'
+                  }`}>
+                    {(ticket.status || 'Open').toUpperCase()}
+                  </span>
+                </div>
+                {ticket.created_at && (
+                  <div className="absolute bottom-4 right-4 text-xs text-gray-500">
+                    {new Date(ticket.created_at).toLocaleString()}
+                  </div>
+                )}
                 <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="text-xl font-semibold text-white group-hover:text-blue-400 transition-colors">
-                      {ticket.title || ticket.issue}
+                  <div className="flex-1 pr-24 pb-4">
+                    <h3 className="font-semibold text-lg group-hover:text-blue-400 transition-colors">
+                      {ticket.title}
                     </h3>
-                    <p className="text-sm text-gray-400 mt-2 line-clamp-2 max-w-2xl">
-                      {ticket.description || "No description provided."}
+                    <p className="text-sm text-gray-400 mt-2 line-clamp-2">
+                      {ticket.description}
                     </p>
                   </div>
-                  <div className="flex flex-col items-end gap-2">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      ticket.status === 'resolved' ? 'bg-emerald-500/20 text-emerald-300' :
-                      ticket.status === 'open' ? 'bg-blue-500/20 text-blue-300' :
-                      'bg-yellow-500/20 text-yellow-300'
-                    }`}>
-                      {(ticket.status || 'Open').toUpperCase()}
-                    </span>
-                  </div>
                 </div>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
           </div>
         )}
       </div>

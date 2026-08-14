@@ -12,7 +12,7 @@ def get_embedding(text: str) -> list[float]:
         model="gemini-embedding-2",
         contents=text
     )
-    return result.embeddings
+    return result.embeddings[0].values
 
 async def aget_embedding(text: str) -> list[float]:
     """

@@ -73,44 +73,37 @@ export default async function DashboardPage() {
         </div>
       ) : (
         <div className="grid gap-4">
-          {tickets.map((ticket: any) => (
-            <Link 
-              href={`/dashboard/tickets/${ticket._id}`} 
-              key={ticket._id}
-              className="block bg-white/5 border border-white/10 rounded-xl p-5 hover:bg-white/10 transition-all group"
-            >
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="text-xl font-semibold text-white group-hover:text-blue-400 transition-colors">
-                    {ticket.title}
-                  </h3>
-                  <p className="text-sm text-gray-400 mt-2 line-clamp-2 max-w-2xl">
-                    {ticket.description}
-                  </p>
+          {tickets.map((ticket: any) => {
+            const ticketId = ticket.id || ticket._id;
+            return (
+              <Link 
+                href={`/dashboard/tickets/${ticketId}`} 
+                key={ticketId}
+                className="block bg-white/5 border border-white/10 rounded-xl p-5 hover:bg-white/10 transition-all group relative"
+              >
+                {ticket.department && (
+                  <div className="absolute top-4 right-4 bg-white/10 text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">
+                    {ticket.department}
+                  </div>
+                )}
+                {ticket.created_at && (
+                  <div className="absolute bottom-4 right-4 text-xs text-gray-500">
+                    {new Date(ticket.created_at).toLocaleString()}
+                  </div>
+                )}
+                <div className="flex justify-between items-start">
+                  <div className="flex-1 pr-16 pb-4">
+                    <h3 className="font-semibold text-lg group-hover:text-blue-400 transition-colors">
+                      {ticket.title}
+                    </h3>
+                    <p className="text-sm text-gray-400 mt-2 line-clamp-2">
+                      {ticket.description}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex flex-col items-end gap-2">
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    ticket.status === 'resolved' ? 'bg-emerald-500/20 text-emerald-300' :
-                    ticket.status === 'open' ? 'bg-blue-500/20 text-blue-300' :
-                    'bg-yellow-500/20 text-yellow-300'
-                  }`}>
-                    {ticket.status === 'pending_analysis' ? 'Analyzing...' : (ticket.status || 'Open').toUpperCase()}
-                  </span>
-                  
-                  {ticket.analysis?.priority && (
-                    <span className={`text-xs px-2 py-1 rounded border ${
-                      ticket.analysis.priority === 'critical' ? 'border-red-500/50 text-red-400' :
-                      ticket.analysis.priority === 'high' ? 'border-orange-500/50 text-orange-400' :
-                      ticket.analysis.priority === 'medium' ? 'border-yellow-500/50 text-yellow-400' :
-                      'border-green-500/50 text-green-400'
-                    }`}>
-                      {ticket.analysis.priority.toUpperCase()}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </Link>
-          ))}
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>
