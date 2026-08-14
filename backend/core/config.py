@@ -4,9 +4,9 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Calculate absolute path to the root .env file
-ROOT_DIR = Path(__file__).resolve().parent.parent.parent
-ENV_PATH = ROOT_DIR / ".env"
+# Calculate absolute path to the backend .env file
+BACKEND_DIR = Path(__file__).resolve().parent.parent
+ENV_PATH = BACKEND_DIR / ".env"
 
 # Explicitly load .env so pydantic-settings reads it from os.environ
 load_dotenv(dotenv_path=ENV_PATH)
