@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+pydantic
+pydantic-settings
+motor
+qdrant-client
+upstash-redis
+google-genai
+langgraph
+langchain-core
+python-jose[cryptography]
+httpx
