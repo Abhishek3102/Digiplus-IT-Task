@@ -10,3 +10,8 @@ langgraph
 langchain-core
 python-jose[cryptography]
 httpx
+langchain-qdrant
+langchain-google-genai
+langchain-community
+python-dotenv
+pypdf
