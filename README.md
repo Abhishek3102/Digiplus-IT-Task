@@ -4,6 +4,11 @@ Welcome to the **DigiPlus AI-Powered Service Desk**, a modern, intelligent IT su
 
 ---
 
+## refer this video walkthrough - not the best but ok
+https://drive.google.com/file/d/1cmtaFaauGZExlv173gNicFWme4rhS79U/view?usp=sharing
+
+---
+
 ## 🏗️ Architecture
 
 Below is the high-level architecture diagram of the DigiPlus Service Desk:
