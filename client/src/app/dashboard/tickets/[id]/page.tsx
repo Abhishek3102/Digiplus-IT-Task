@@ -131,7 +131,7 @@ export default async function TicketDetailPage({ params }: { params: { id: strin
                 <div>
                   <span className="text-xs text-gray-500 block mb-2">Tags</span>
                   <div className="flex flex-wrap gap-2">
-                    {ticket.analysis.tags?.map((tag: str) => (
+                    {ticket.analysis.tags?.map((tag: string) => (
                       <span key={tag} className="text-xs bg-white/5 border border-white/10 px-2 py-1 rounded-full text-gray-300">
                         {tag}
                       </span>

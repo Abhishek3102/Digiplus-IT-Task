@@ -28,7 +28,7 @@ export default function Navbar() {
                 <Link href="/dashboard" className="text-sm font-medium text-gray-300 hover:text-white transition-colors mr-4">
                   Dashboard
                 </Link>
-                <UserButton afterSignOutUrl="/" />
+                <UserButton />
               </>
             )}
           </div>
